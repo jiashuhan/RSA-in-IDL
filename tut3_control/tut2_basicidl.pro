@@ -58,23 +58,27 @@ function nth_root, a, b
 ;this function takes the ath root of b
 
   input_arr = [a,b]
-  root = b^(1./a)
-  ;the root is a float
-
-  if a EQ 1 then begin
-     if b EQ 0 then begin
-        print, '0'
-     endif
-  endif
-  if a EQ 0 then begin
-     if b EQ 1 then begin
-        print, '1'
-     endif
-  endif
-
-  if b LT 0 then begin
-     print, 'input cannot be negative' 
+  s=size(input_arr)
+  if s[2] EQ 7 then begin;the datatype cannot be string (7)
+     print, "input cannot contain strings"
   endif else begin
-     return, root
+     root = b^(1./a)
+     ;the root is a float
+
+     if a EQ 1 then begin;for a=1, b=0
+        if b EQ 0 then begin
+           print, '0'
+        endif
+     endif
+     if a EQ 0 then begin;for a=0, b=1
+        if b EQ 1 then begin
+           print, '1'
+        endif
+     endif
+     if b LT 0 then begin;for negative inputs
+        print, 'input cannot be negative' 
+     endif else begin
+        return, root;return the result if the above cases are not encountered
+     endelse
   endelse
 end
