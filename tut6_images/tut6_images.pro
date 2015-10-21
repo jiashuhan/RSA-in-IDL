@@ -1,43 +1,111 @@
 function min_dist, header, xpos, ypos
   img=mrdfits('idl_image.fits', 0, hdr)
-  kit1=fxpar(hdr, 'kit1loc')
-  kit2=fxpar(hdr, 'kit2loc')
-  kit3=fxpar(hdr, 'kit3loc')
-  kit4=fxpar(hdr, 'kit4loc')
   n=4
- ; str
-  kitloc_arr=strarr(n)
-  for i=10, 13 do begin
-     kitloc_arr=[kitloc_arr,strpos(hdr[i], i)]
+  locs=[]
+  for i=0, n_elements(hdr)-1 do begin
+     a=string(i)
+     a1=repstr(a, ' ', '')
+     b='kit'+a1+'loc'
+     if strmatch(hdr[i], '*]*') EQ 1 then begin
+     locs=[locs,fxpar(hdr, b)]
+     endif
   endfor
-  ;INPUTS: the header, and (x,y) of a point on the kitten's face
-  ;OUTPUTS: the string which you must fxpar from the header
-  coords=intarr(2,n)
-  comma=strpos(kitloc_arr, ',')
-  bracket=strpos(kitloc_arr, ']')
+  coords = intarr(2,n)
+  ;find locations of delimiting characters
+  inds = strpos(locs, ',')
+  inds2 = strpos(locs, ']')
+  ;use inds to take out values from locs and convert them into floats
+  for i = 0, n-1 do begin
+     coords[0,i] = float(strmid(locs[i], 1, inds[i]-1))
+     coords[1,i] = float(strmid(locs[i], inds[i]+1, inds2[i]-inds[i]-1))
+  endfor
+  ;find minimum distance
+  d_arr=[]
   for i=0, n-1 do begin
-     coords[0,i]=(byte(strmid(kitloc_arr[i], 0, comma[i])))[0]
-     coords[1,i]=(byte(strmid(kitloc_arr[i], comma[i]+1, bracket[i]-comma[i]-1)))[0]
+     d=((xpos-coords[0,i])^2+(ypos-coords[1,i])^2)^0.5
+     d_arr=[d_arr, d]
+     if d LT min(d_arr) then begin
+        d1=d
+        i1=i
+     endif
   endfor
-  return, coords
-                                ;finding the distance between the
-                                ;location and the user click in the
-                                ;image
-  ;and minimizing it. how do i find the distance between two points?
-  ;how do i take the min of an array in idl?
-  
-
-                                ;converting the index into the fxpar
-                                ;input. how can i go from the index of
-  ;the min distance to a name in the header?
-
-;  return, match
-
+  ;record the number of the kitten
+  string=string(i1+1)
+  string1=repstr(string, ' ', '')
+  number='kit'+string1
+  return, number
 end
 
-;min dist: Write a function that finds the kitten closest to the user’s click. Hint: look in the header for the center of each kitten’s face and write some code that figures out which kitten is the closest to the click.
-;whats my name: Write a function to find out the name of the kitten that was clicked on. The names of each kitten are stored in the header, make sure your script automat- ically picks out the name after the user has clicked.
-;colorzoom: Write a function that zooms in and changes the color of a kitten of your choice. Remember your 2D array manipulation skills from your work with arrays and colortables from your work with plots.
-;better half: Write a function that takes the zoomed-in face and increases the bright- ness of the right side by a factor of 1/3
-;save kitty: Write a procedure that will save your colorful, brightened kitten as a new FITS file called pretty_kitty.fits into your tut6_images directory. In the header of this new FITS file include both the name of the kitten you chose and why you chose it over the other three.
-;main: Finally write a wrapper procedure that will call your other routines in the correct order. Once you’re done you should just be able to call main and your new FITS file should be generated after the user picks a kitten.
+function whats_my_name, pic, header 
+  ;input the result of min_dist and find the name of the kitten
+  cursor, xpos, ypos
+  a=min_dist(header, xpos, ypos)
+  b=a+'name'
+  name=fxpar(hdr, b)
+  return, name
+end
+
+function colorzoom, pic
+  ;zoom in the selected kitten and change its color
+  ;show the picture
+  display, pic, title='choose a kitten'
+  ;select a kitten
+  cursor, xpos, ypos
+  a=min_dist(hdr, xpos, ypos)
+  b=a+'loc'
+  ;find location of nearset kitten using min_dist
+  loc=fxpar(hdr, b)
+  coords = intarr(2)
+  inds = strpos(loc, ',')
+  inds2 = strpos(loc, ']')
+  coords[0] = float(strmid(loc, 1, inds-1))
+  coords[1] = float(strmid(loc, inds+1, inds2-inds-1))
+  new_pic=rot(pic, 0, 2, coords[0], coords[1])
+  ;setting the range of points that will define the "zoomed" image. 
+  new_pic=bytscl(new_pic)
+  color=colortable(!yellow)
+  return, new_pic
+end
+
+function better_half, pic
+  ;take the image from colorzoom and increase the brightness of the right half by 1/3
+  img=colorzoom(pic)
+  ;defining a new image variable
+  new_pic=img
+  xloc=new_pic[*,0]
+  yloc=new_pic[*,1]
+  ;making the right half a third brighter
+  for i=n_elements(xloc)/2, n_elements(xloc)-1 do begin
+     for j=0, n_elements(yloc)-1 do begin
+        new_pic[i,j]=4/3*new_pic[i,j]
+     endfor
+  endfor
+  return, new_pic
+end
+
+pro save_kitty, pic, name
+  ;save the new picture in a new FITS file with new header
+  ;declaring a variable containing the name
+  kitname=name
+  ;declaring a variable containing the reason for kitten choice
+  reason='chosen by a random click'  
+  ;sticking in the two strings above into the header
+  sxaddpar, hdr, 'kitname', kitname
+  sxaddpar, hdr, 'reason', reason  
+  ;write the fits file as prettykitty.fits
+  mwrfits, img, 'pretty_kitty.fits', hdr
+end
+
+pro main
+  ;run all functions in correct sequence
+  ;reading in the image and the header
+  img=mrdfits('idl_image.fits', 0, hdr)
+  ;will zoom in on one kitten's face
+  myfave=colorzoom(img, hdr)
+  ;will brighten half of that kitten's face
+  artsy_img=better_half(myfave)
+  ;will find the kitten's name in the header
+  name=whats_my_name(img, hdr)
+  ;will save your edited image along with the kitten's name 
+  save_kitty, artsy_img, name
+end
