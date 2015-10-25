@@ -30,7 +30,7 @@ end
 pro error4
    x = [1,2,3]
    y = ['a','b', 'c']
-   z = list(x, y);x and y do not have the same datatype
+   z = list(x, y);x and y do not have the same datatype ;;;This works, but the user wanted z to be an array. -5
    print, z;prints the list
 end
 ;Different datatypes are mixed together in an array and a list should be
@@ -50,13 +50,13 @@ pro error5
       endfor
    endfor;should be "endfor"
    for i=0,s[1]-1 do begin
-      for j=0,s[2]-1 do begin
+      for j=0,s[2]-1 do begin 
          if i+j GT 45 then begin;use GT instead of >
             x[i,j]=i+j;replace such element with i+j
          endif
       endfor
       print, x
-   endfor;lacks "endfor"
+   endfor;lacks "endfor"  ;;; This should be above print x. -5
 end
 ;for loops need to end with "endfor"; "=" and ">" should be replaced by EQ
 ;and GT in conditional statements.
