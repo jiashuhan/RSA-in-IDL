@@ -1,3 +1,5 @@
+
+;;;Nicely done. +10 Winkey
 pro plotty
   ;define x values
   x=findgen(2000000)/1000000-1
