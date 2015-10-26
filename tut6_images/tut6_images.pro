@@ -1,5 +1,5 @@
 function min_dist, header, xpos, ypos
-  img=mrdfits('idl_image.fits', 0, hdr)
+  img=mrdfits('idl_image.fits', 0, hdr) ;;;Next time, just pass this through
   n=4
   locs=[]
   for i=0, n_elements(hdr)-1 do begin
@@ -45,7 +45,7 @@ function whats_my_name, pic, header
   return, name
 end
 
-function colorzoom, pic
+function colorzoom, pic, hdr;;;You forgot the hdr variable. -5 ;;;Several other errors that need to be fixed -10
   ;zoom in the selected kitten and change its color
   ;show the picture
   display, pic, title='choose a kitten'
