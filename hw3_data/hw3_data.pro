@@ -156,3 +156,4 @@ function find_gauss_centroid
   ;return the array containing the centroids
   return, array2
 end
+;;;;;;;;;;;;nice job;;;;;;;;;;;;;;;;;
