@@ -37,6 +37,7 @@ pro factorial, a
            print, "input must be between [1,12]."
         endif else begin
            print, factorial(a)
+;;;;;;;;;;;;;;;;;;;;;;;This doesn't count (-10);;;;;;;;;;;;
         endelse
      endelse
   endelse
