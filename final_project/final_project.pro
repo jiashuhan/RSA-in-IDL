@@ -33,12 +33,6 @@ pro decrypt, path, key
   endelse
 end
 
-;runs gen_rsa_key
-pro rsakey
-  key_string=string(gen_rsa_key())
-  print, 'N='+key_string[0]+'     E='+key_string[1]+'     D='+key_string[2]
-end
-
 ;loads the message from file
 function load_file, path
   openr, lun, path, /get_lun
@@ -121,6 +115,8 @@ function gen_rsa_key
 ;  print,k
   d=(k*(p-1)*(q-1)+1)/e
   key=[n,e,d]
+  key_string=string(key)
+  print, 'N='+key_string[0]+'     E='+key_string[1]+'     D='+key_string[2]
   return, key
 end
 
