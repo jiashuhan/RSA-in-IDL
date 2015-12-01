@@ -1,7 +1,35 @@
-;RSA Encryption tool
+;RSA Encryption/Decryption
 ;Jiashu Han
-pro start
-  print, "To encrypt or decrypt a message, type 'main, <path>, key'. To generate an RSA key, type 'rsakey'. NOTE: This program supports 76 characters (not including '?') and the components of the RSA key have to be greater than 75 (number of characters supported-1)." ;this is to ensure the transformation from characters to codes is bijective
+
+pro main
+  print, "NOTE: This program supports 76 characters (not including '?')."
+  input1=''
+  input2=''
+  path=''
+  key1=''
+  key2=''
+  read, input1, prompt='To encrypt, enter 1; to decrypt, enter 2; to get a key, enter 3:'
+  if input1 EQ '1' then begin        ;Calls the encryption procedure
+     read, input2, prompt='Do you have a key? Y/N:'
+     if input2 EQ 'N' then begin
+        gen_rsa_key
+     endif
+     read, path, prompt='Please enter the path of the file:'
+     read, key1, prompt='Please enter N (N>75):' ;this is to ensure the transformation from characters to codes is bijective
+     read, key2, prompt='Please enter E:'
+     key=[ulong64(key1),ulong64(key2)]
+     encrypt, path, key
+  endif
+  if input1 EQ '2' then begin        ;Calls the decryption procedure
+     read, path, prompt='Please enter the path of the file:'
+     read, key1, prompt='Please enter N (N>75):'
+     read, key2, prompt='Please enter D:'
+     key=[ulong64(key1),ulong64(key2)]
+     decrypt, path, key
+  endif
+  if input1 EQ '3' then begin
+     gen_rsa_key
+  endif
 end
 
 ;encryption procedure
@@ -10,11 +38,11 @@ pro encrypt, path, key
      print, 'Path must be a string.'
   endif else begin
      message=load_file(path)
-     m_code=conversion(message,['a'])
+     m_code=convert(message,['a'])
      c_code=rsa(key,m_code)
      print, c_code
-     c_code=string(c_code)
-     save, c_code
+;     c_code=string(c_code)
+     save_file, c_code
      print, 'saved as message.txt in the working directory.'
   endelse
 end
@@ -26,9 +54,10 @@ pro decrypt, path, key
   endif else begin
      c_code=load_encrypted_file(path)
      m_code=rsa(key,c_code)
-     message=conversion(0,m_code)
+     m_code1=fix(m_code)        ;it appears that 'convert' only accepts integers
+     message=convert(0,m_code1)
      print, message
-     save, message
+     save_file, message
      print, 'saved as message.txt in the working directory.'
   endelse
 end
@@ -55,22 +84,24 @@ end
 ;loads the encrypted code from file
 function load_encrypted_file, path
   openr, lun, path, /get_lun
-  array=''
   line=''
+  array=''
   while not EOF(lun) do begin
      readf, lun, line
      print, line
      a=line
+     array=[array,a]
   endwhile
   free_lun, lun                 ;the above loads the file
-  b=strsplit(a, /extract)
-  c=ulong64(b)
-  return, c
+  b=strjoin(array)
+  c=strsplit(b, /extract)       ;converts to a 1-dimensional array
+  d=ulong64(c)
+  return, d
 end
 
 ;converts letters and symbols to numbers; code must be an integer array; cannot use '?', this is problematic
-function conversion, text, code 
-  codebook=['a','A','b','B','c','C','d','D','e','E','f','F','g','G','h','H','i','I','j','J','k','K','l','L','m','M','n','N','o','O','p','P','q','Q','r','R','s','S','t','T','u','U','v','V','w','W','x','X','y','Y','z','Z',' ',',','.',';',':','!','"',"'",'(',')','[',']','-','0','1','2','3','4','5','6','7','8','9'] ;this codebook can be easily scrambled
+function convert, text, code 
+  codebook=['a','A','b','B','c','C','d','D','e','E','f','F','g','G','h','H','i','I','j','J','k','K','l','L','m','M','n','N','o','O','p','P','q','Q','r','R','s','S','t','T','u','U','v','V','w','W','x','X','y','Y','z','Z',' ',',','.',';',':','!','"',"'",'(',')','[',']','-','0','1','2','3','4','5','6','7','8','9'] ;the characters can be in any order
   if (size(code))[2] NE 2 then begin ;converts text to code
      code=[]
      for i=0, n_elements(text)-1 do begin
@@ -83,9 +114,10 @@ function conversion, text, code
      return, code  
   endif else begin              ;converts code to text
      text=''
-     for i=0, n_elements(code)-1 do begin
+     code1=fix(code)
+     for i=0, n_elements(code1)-1 do begin
         for j=0, n_elements(codebook)-1 do begin
-           if j EQ code[i] then begin
+           if j EQ code1[i] then begin
               text=[text,codebook[j]]
            endif
         endfor
@@ -96,7 +128,7 @@ function conversion, text, code
 end
 
 ;generates a set of keys for the RSA encryption algorithm; it's not easy to deal with negative divisor
-function gen_rsa_key
+pro gen_rsa_key
   n=-1
   while n LT 0 do begin
      k1=ulong64(randomu(seed)*100) ;the components of the key have to be greater than 75
@@ -117,7 +149,6 @@ function gen_rsa_key
   key=[n,e,d]
   key_string=string(key)
   print, 'N='+key_string[0]+'     E='+key_string[1]+'     D='+key_string[2]
-  return, key
 end
 
 ;encrypts or decrypts code using the RSA algorithm with provided keys
@@ -127,7 +158,7 @@ function rsa, key, code
   code=ulong64(code)
   new_code_array=[]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;this is the entire function I wrote at the beginning:
+;this is the function I wrote at the beginning (it's also the basic idea):
 ;     new_code=(code^e_d) MOD n
 ;THIS DOESN'T WORK.
 ;code^e_d easily exceeds 18,446,744,073,709,551,615 (about 1.8E19, max for 64-bit computers)
