@@ -127,7 +127,7 @@ function rsa, key, code
   code=ulong64(code)
   new_code_array=[]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;this is the way you might think we should use:
+;this is the entire function I wrote at the beginning:
 ;     new_code=(code^e_d) MOD n
 ;THIS DOESN'T WORK.
 ;code^e_d easily exceeds 18,446,744,073,709,551,615 (about 1.8E19, max for 64-bit computers)
