@@ -189,7 +189,7 @@ function rsa, key, code
               6:A=(M1*M2) MOD n
               7:A=(B*M4) MOD n
               8:A=M3 MOD n
-              9:A=(B*M2) MOD n
+              9:A=(B*M3) MOD n
            endcase
         endif else begin
            A=B^R MOD n          ;or A=(array_B[k])^R mod n
@@ -228,7 +228,7 @@ function rsa, key, code
            6:D=(M1*M2) MOD n
            7:D=((array_B[k])*M4) MOD n
            8:D=M3 MOD n
-           9:D=((array_B[k])*M2) MOD n
+           9:D=((array_B[k])*M3) MOD n
         endcase
      endif else begin
         D=(array_B[k])^S
